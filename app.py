@@ -7,16 +7,18 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.edge.service import Service as EdgeService
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-
-# with open('logging.yml', 'r') as f:
-#     config = yaml.safe_load(f.read())
-#     logging.config.dictConfig(config)
+with open('logging.yml', 'r') as f:
+    config = yaml.safe_load(f.read())
+    logging.config.dictConfig(config)
 
 logger = logging.getLogger()
 
@@ -26,6 +28,7 @@ load_dotenv(dotenv_path=Path("env/.env"))
 class Browsers(enum.Enum):
     FIREFOX = 0
     EDGE = 1
+    CHROME = 2
 
 
 def create_driver(browser):
@@ -33,9 +36,17 @@ def create_driver(browser):
         case Browsers.FIREFOX.name:
             logger.info("Using Firefox browser")
             driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+
         case Browsers.EDGE.name:
             logger.info("Using Edge browser")
-            driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()))
+            options = EdgeOptions()
+            options.accept_insecure_certs = True
+            driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
+
+        case Browsers.CHROME.name:
+            logger.info("Using Chrome browser")
+            driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+
         case other:
             # Should not get here since browser valid values are limited by argparse, but just in case
             logger.error("Browser not supported.")
@@ -73,7 +84,7 @@ def run(browser):
     driver.quit()
 
 
-if __name__ == "__main__":
+def main():
     arg_parse = argparse.ArgumentParser(description="Demo Selenium script")
     
     arg_parse.add_argument("--browser", choices=Browsers._member_names_, default=Browsers.FIREFOX.name, help="Browser to use")
@@ -81,3 +92,7 @@ if __name__ == "__main__":
     args = arg_parse.parse_args()
 
     run(args.browser)
+
+
+if __name__ == "__main__":
+    main()
