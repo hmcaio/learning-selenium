@@ -7,10 +7,12 @@ from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.remote.webdriver import BaseWebDriver
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.download_manager import WDMDownloadManager
 from webdriver_manager.firefox import GeckoDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from browsers import Browsers
+from custom_http_client import CustomHttpClient
 
 
 class DriverFactory:
@@ -20,20 +22,23 @@ class DriverFactory:
 
     @classmethod
     def create(cls, browser: Browsers) -> BaseWebDriver:
+        http_client = CustomHttpClient()
+        download_manager = WDMDownloadManager(http_client)
+
         match browser:
             case Browsers.FIREFOX.name:
                 cls.logger.info("Creating Firefox driver")
-                driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+                driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager(download_manager=download_manager).install()))
 
             case Browsers.EDGE.name:
                 cls.logger.info("Creating Edge driver")
                 options = EdgeOptions()
                 # options.accept_insecure_certs = True
-                driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
+                driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager(download_manager=download_manager).install()), options=options)
 
             case Browsers.CHROME.name:
                 cls.logger.info("Creating Chrome driver")
-                driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+                driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager(download_manager=download_manager).install()))
 
             case other:
                 # Should not get here, but just in case
